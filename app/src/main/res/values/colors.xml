@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<resources>
+    <color name="pelorous">#41aac4</color>
+    <color name="monte_carlo">#80ceb9</color>
+    <color name="orange_yellow">#bdb69c</color>
+    <color name="gray">#dddddd</color>
+    <color name="raven">#717d8c</color>
+    <color name="outerspace">#2f343a</color>
+    <color name="trans_green">#6db344</color>
+    <color name="trans_red">#e81e25</color>
+    <color name="voilet">#421c52</color>
+    <color name="magenta">#732c7b</color>
+    <color name="amethyst_smoke">#9c8aa5</color>
+    <color name="chatelle">#bdaec6</color>
+    <color name="azure">#336699</color>
+    <color name="dove_gray">#666666</color>
+    <color name="dusty_gray">#999999</color>
+    <color name="white">#ffffff</color>
+</resources>
