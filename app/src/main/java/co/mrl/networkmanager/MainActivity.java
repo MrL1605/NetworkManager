@@ -6,6 +6,7 @@ import android.app.PendingIntent;
 import android.app.TimePickerDialog;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.wifi.WifiManager;
@@ -16,6 +17,9 @@ import android.telephony.SubscriptionManager;
 import android.telephony.TelephonyManager;
 import android.util.Log;
 import android.view.View;
+import android.widget.CompoundButton;
+import android.widget.Switch;
+import android.widget.TextView;
 import android.widget.TimePicker;
 
 import java.io.IOException;
@@ -27,15 +31,65 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     private AlarmManager alarmMgr;
     private PendingIntent alarmIntent;
+    Switch timer_switch;
+    TextView time_display;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        final SharedPreferences.Editor editor = getPreferences(MODE_PRIVATE).edit();
+        SharedPreferences prefs = getPreferences(MODE_PRIVATE);
+        Log.i("OnCreate Shared",prefs.getLong("timeInMillis", -1) + "");
+        if (prefs.getLong("timeInMillis", -1) == -1){
+            Calendar c = Calendar.getInstance();
+            c.set(Calendar.HOUR_OF_DAY, 9);
+            editor.putLong("timeInMillis", c.getTimeInMillis());
+        }
+
+
         findViewById(R.id.change_state).setOnClickListener(this);
         findViewById(R.id.select_time).setOnClickListener(this);
+        time_display = (TextView) findViewById(R.id.time_display);
 
+        Log.i("OnCreate Shared",prefs.getString("timeInHours", "XXX") + "");
+        if (prefs.getString("timeInHours","XXX").equals("XXX")){
+            editor.putString("timeInHours","09 : 00");
+            time_display.setText("09 : 00");
+        }else{
+            time_display.setText(prefs.getString("timeInHours","XXX"));
+        }
+
+
+        timer_switch = (Switch) findViewById(R.id.timer_switch);
+        Log.i("OnCreate Shared",prefs.getBoolean("timer bool", false) + "");
+        if (prefs.getBoolean("timer bool",false)){
+            timer_switch.setChecked(true);
+        }else{
+            timer_switch.setChecked(false);
+            editor.putBoolean("timer bool", false);
+        }
+
+        timer_switch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
+
+                if (b){
+                    turnAlarmOn();
+                    SharedPreferences.Editor editor = getPreferences(MODE_PRIVATE).edit();
+                    editor.putBoolean("timer bool", true);
+                    editor.apply();
+                }else{
+                    turnAlarmOff();
+                    SharedPreferences.Editor editor = getPreferences(MODE_PRIVATE).edit();
+                    editor.putBoolean("timer bool", false);
+                    editor.apply();
+                }
+            }
+        });
+
+        editor.apply();
     }
 
 
@@ -180,7 +234,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         if (v.getId() == R.id.select_time) {
 
             Calendar c = Calendar.getInstance();
-            Log.i("Log : ", "Time Picker called");
+            Log.i("State : ", "Time Picker called");
 
             new TimePickerDialog(this, new TimePickerDialog.OnTimeSetListener() {
                 @Override
@@ -190,22 +244,63 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     Calendar temp_cal = Calendar.getInstance();
                     temp_cal.set(Calendar.HOUR_OF_DAY, hourOfDay);
                     temp_cal.set(Calendar.MINUTE, minute);
+                    String string_time = "";
+                    if (hourOfDay<10){
+                        string_time += "0" + hourOfDay;
+                    }else{
+                        string_time += hourOfDay;
+                    }
+                    if (minute<10){
+                        string_time += ": 0" + minute;
+                    }else{
+                        string_time += ": " + minute;
+                    }
 
-                    Context context = MainActivity.this;
-                    Intent intent = new Intent(context, ConfirmSleep.class);
-                    PendingIntent pendingIntent = PendingIntent.getActivity(context,
-                            12345, intent, PendingIntent.FLAG_CANCEL_CURRENT);
-                    AlarmManager am = (AlarmManager) getSystemService(Activity.ALARM_SERVICE);
-                    am.setRepeating(AlarmManager.RTC_WAKEUP, temp_cal.getTimeInMillis(),
-                            24 * 60 * 60 * 1000, pendingIntent);
+                    SharedPreferences.Editor editor = getPreferences(MODE_PRIVATE).edit();
+                    editor.putLong("timeInMillis", temp_cal.getTimeInMillis());
+                    editor.putString("timeInHours", string_time);
+                    editor.apply();
+                    time_display.setText(string_time);
+                    timer_switch.setChecked(true);
 
                 }
             }, c.get(Calendar.HOUR_OF_DAY), c.get(Calendar.MINUTE), true).show();
 
-
         } else if (v.getId() == R.id.change_state) {
+
+            turning_off_everything();
             Log.i("State  : ", "Changing");
         }
+
+    }
+
+    public void turnAlarmOn(){
+
+        SharedPreferences prefs = getPreferences(MODE_PRIVATE);
+        long timeInMillis = prefs.getLong("timeInMillis", 0);
+
+        Log.i("Alarm Manager:"," Turned On");
+
+        Context context = MainActivity.this;
+        Intent intent = new Intent(context, ConfirmSleep.class);
+        PendingIntent pendingIntent = PendingIntent.getActivity(context,
+                12345, intent, PendingIntent.FLAG_CANCEL_CURRENT);
+        AlarmManager am = (AlarmManager) getSystemService(Activity.ALARM_SERVICE);
+        am.setRepeating(AlarmManager.RTC_WAKEUP, timeInMillis,
+                24 * 60 * 60 * 1000, pendingIntent);
+
+    }
+
+    public void turnAlarmOff(){
+
+        Log.i("Alarm Manager:"," Turned Off");
+
+        // Permanently disable alarm
+        Intent intent = new Intent(this, ConfirmSleep.class);
+        PendingIntent pendingIntent = PendingIntent.getActivity(this,
+                12345, intent, PendingIntent.FLAG_CANCEL_CURRENT);
+        AlarmManager am = (AlarmManager)getSystemService(Activity.ALARM_SERVICE);
+        am.cancel(pendingIntent);
 
     }
 

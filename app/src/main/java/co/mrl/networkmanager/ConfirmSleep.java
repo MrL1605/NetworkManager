@@ -4,9 +4,9 @@ import android.app.Activity;
 import android.app.AlarmManager;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
-import android.app.TimePickerDialog;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.wifi.WifiManager;
@@ -18,7 +18,7 @@ import android.telephony.SubscriptionManager;
 import android.telephony.TelephonyManager;
 import android.util.Log;
 import android.view.View;
-import android.widget.TimePicker;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import java.io.IOException;
@@ -33,12 +33,14 @@ import java.util.TimerTask;
  */
 public class ConfirmSleep extends Activity implements View.OnClickListener {
 
+    TextView remaining_time;
+
     private AlarmManager alarmMgr;
     private PendingIntent alarmIntent;
 
     TimerTask scanTask;
     final Handler handler = new Handler();
-    Timer t;
+    Timer t;Timer timer;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -47,11 +49,11 @@ public class ConfirmSleep extends Activity implements View.OnClickListener {
 
         Log.i("ConfirmSleep: ", "OnCreate activated");
         Toast.makeText(this, "Timer executed", Toast.LENGTH_LONG).show();
+        remaining_time = (TextView) findViewById(R.id.remaining_time);
         findViewById(R.id.postpone_alarm).setOnClickListener(this);
         findViewById(R.id.disable_alarm).setOnClickListener(this);
 
         t = new Timer();
-
         scanTask = new TimerTask() {
             public void run() {
                 handler.post(new Runnable() {
@@ -59,19 +61,23 @@ public class ConfirmSleep extends Activity implements View.OnClickListener {
                         turning_off_everything();
                         Log.d("TIMER", "Timer set off");
 
+                        Calendar temp = Calendar.getInstance();
                         Context context = ConfirmSleep.this;
-                        NotificationManager NManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);                        NotificationCompat.Builder mBuilder =
+                        NotificationManager NManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+                        NotificationCompat.Builder mBuilder =
                                 new NotificationCompat.Builder(context)
                                         .setSmallIcon(R.drawable.notification_alert_event)
-                                        .setContentTitle("My notification")
-                                        .setContentText("Data Pack and Wifi turned Off");
+                                        .setContentTitle("Network Manager")
+                                        .setContentText("Internet Connection turned Off at " + temp.get(Calendar.HOUR_OF_DAY) + " : " + temp.get(Calendar.MINUTE));
                         NManager.notify(2, mBuilder.build());
+                        timer.cancel();
                         finish();
                     }
                 });
             }
         };
         t.schedule(scanTask, 1000 * 30);
+        updateTimerDisplay();
     }
 
     @Override
@@ -79,42 +85,48 @@ public class ConfirmSleep extends Activity implements View.OnClickListener {
 
         if (v.getId() == R.id.postpone_alarm) {
 
-            /*
+            // Disable this time alarm
             t.cancel();
-            Calendar c = Calendar.getInstance();
-            Log.i("Log : ", "Time Picker called");
-            new TimePickerDialog(this, new TimePickerDialog.OnTimeSetListener() {
-                @Override
-                public void onTimeSet(TimePicker view, int hourOfDay, int minute) {
-
-                    System.out.println("\nTime:" + hourOfDay + ": " + minute);
-                    Calendar temp_cal = Calendar.getInstance();
-                    temp_cal.set(Calendar.HOUR_OF_DAY, hourOfDay);
-                    temp_cal.set(Calendar.MINUTE, minute);
-
-                    Context context = ConfirmSleep.this;
-                    Intent intent = new Intent(context, ConfirmSleep.class);
-                    PendingIntent pendingIntent = PendingIntent.getActivity(context,
-                            12345, intent, PendingIntent.FLAG_CANCEL_CURRENT);
-                    AlarmManager am = (AlarmManager)getSystemService(Activity.ALARM_SERVICE);
-                    am.setRepeating(AlarmManager.RTC_WAKEUP, temp_cal.getTimeInMillis(),
-                            24 * 60 * 60 * 1000, pendingIntent);
-
-                }
-            }, c.get(Calendar.HOUR_OF_DAY), c.get(Calendar.MINUTE), true).show();
-            */
+            timer.cancel();
+            finish();
 
         } else if (v.getId() == R.id.disable_alarm) {
 
-            /*
+            t.cancel();
+            // Permanently disable alarm
             Intent intent = new Intent(this, ConfirmSleep.class);
             PendingIntent pendingIntent = PendingIntent.getActivity(this,
                     12345, intent, PendingIntent.FLAG_CANCEL_CURRENT);
             AlarmManager am = (AlarmManager)getSystemService(Activity.ALARM_SERVICE);
             am.cancel(pendingIntent);
-            */
-        }
 
+            SharedPreferences.Editor editor = getPreferences(MODE_PRIVATE).edit();
+            editor.putBoolean("timer bool", false);
+            editor.apply();
+            timer.cancel();
+            finish();
+
+        }
+    }
+
+    private void updateTimerDisplay() {
+        timer = new Timer();
+        timer.schedule(new TimerTask() {
+
+            int start = 30;
+            @Override
+            public void run() {
+                if (start>0)
+                    start -= 1;
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        remaining_time.setText(new StringBuffer().append(start));
+                    }
+                });
+                Log.i("Seconds Timer here : ", start+"");
+            }
+        }, 0, 1000);//Update text every second
     }
 
     public void turning_off_everything() {

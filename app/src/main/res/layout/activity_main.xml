@@ -11,7 +11,7 @@
     android:background="@color/raven">
 
     <LinearLayout
-        android:layout_width="wrap_content"
+        android:layout_width="150dp"
         android:layout_height="wrap_content"
         android:layout_centerInParent="true"
         android:orientation="vertical"
@@ -22,7 +22,7 @@
             android:id="@+id/time_display"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text=" Time : "
+            android:text="09 : 00"
             android:textSize="20sp"
             android:layout_gravity="center"
             android:layout_margin="10dp"
@@ -30,21 +30,25 @@
 
         <Button
             android:id="@+id/select_time"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="Select Time"
             android:layout_gravity="center"
             android:layout_margin="10dp"
             android:padding="10dp"
+            android:textColor="@color/white"
+            android:background="@drawable/transparent_button"
             />
 
         <Button
             android:id="@+id/change_state"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="Change State"
             android:layout_gravity="center"
             android:layout_margin="10dp"
+            android:textColor="@color/white"
+            android:background="@drawable/transparent_button"
             />
 
     </LinearLayout>
@@ -56,20 +60,14 @@
         android:layout_alignParentRight="true"
         android:layout_margin="10dp">
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_margin="15dp"
-            android:text="Set Timer :"
-            android:textSize="20sp"
-            android:textStyle="bold"
-            />
-
         <Switch
             android:id="@+id/timer_switch"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_margin="10dp" />
+            android:layout_margin="10dp"
+            android:text="Set Timer :"
+            android:textSize="20sp"
+            />
     </LinearLayout>
 
 </RelativeLayout>
